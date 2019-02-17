@@ -2,7 +2,6 @@ import glob
 import os
 import re
 import sqlite3
-from collections import namedtuple
 from datetime import datetime
 from shutil import copyfile
 
