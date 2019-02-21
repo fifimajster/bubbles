@@ -2,7 +2,6 @@ import glob
 import os
 import re
 import sqlite3
-from datetime import datetime
 from shutil import copyfile
 
 
@@ -42,7 +41,7 @@ def _get_history(time_limit=0):
     # todo check if lastModified really is the time of the last visit
     query = 'select url, visit_count, (lastModified / 1000000) as last_visited ' \
             'from moz_places join moz_annos ' \
-            'where last_visited > {};'.format(time_limit)
+            f'where last_visited > {time_limit};'
     cursor = _get_db_cursor()
     cursor.execute(query)
 
@@ -54,6 +53,8 @@ def _get_history(time_limit=0):
 
 def get_video_records(time_limit=0):
     """Gets latest videos from browser's history.
+
+    Yields a dict with keys: video_id, visit_count, last_visited
 
     Args:
         time_limit (float): only get records later than this
@@ -74,10 +75,6 @@ def get_video_records(time_limit=0):
             video_id = match.group(2)
             yield {
                 'video_id': video_id,
-                'visit_count': record[1],
+                'visit_count': record[1],   # todo is visit_count legit?
                 'last_visited': record[2]
             }
-
-
-def _unix_to_timestamp(unix_seconds):   # delete?
-    return datetime.fromtimestamp(unix_seconds).isoformat()
