@@ -1,4 +1,3 @@
-import time
 import logging
 import time
 from multiprocessing.pool import ThreadPool
@@ -9,8 +8,7 @@ from bubbles.common import ensure_neo4j_running, unix_to_timestamp, wait_for_con
 from bubbles.history_parser import get_video_records
 from bubbles.youtube_proxy import fetch_recomms
 
-logging.getLogger().setLevel(logging.DEBUG)  # just for testing
-
+logger = logging.getLogger('bubbles')
 
 Recommends = Relationship.type('RECOMMENDS')
 
@@ -43,7 +41,7 @@ class GraphUpdater:
             if only_new_records else 0
 
         timestamp = unix_to_timestamp(last_update)
-        logging.info(f'Updating with records younger than {timestamp}...')
+        logger.info(f'Updating with records younger than {timestamp}...')
 
         for video_info in get_video_records(last_update):
             # todo maybe first put them all to some buffer and then insert
@@ -76,7 +74,7 @@ class GraphUpdater:
             # create new node
             new_node = Node('Video', **info, recomms_update=0)
             tx.create(new_node)
-            logging.debug(f'Created new node {new_node}')
+            logger.debug(f'Created new node {new_node}')
             return new_node
         else:
             # update node
@@ -86,7 +84,7 @@ class GraphUpdater:
                                      node['watch_dist'])
             node.update(info)
             tx.push(node)
-            logging.debug(f'Updated node {node}')
+            logger.debug(f'Updated node {node}')
             return node
 
     def _get_node(self, node_type, **kwargs):

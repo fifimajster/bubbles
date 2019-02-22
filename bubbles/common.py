@@ -1,4 +1,5 @@
 import logging
+import os
 import shlex
 import subprocess
 import time
@@ -6,6 +7,8 @@ from datetime import datetime
 
 import neobolt
 from py2neo import Node
+
+logger = logging.getLogger('bubbles')
 
 
 def run_neo4j_command(cmd):
@@ -18,8 +21,13 @@ def run_neo4j_command(cmd):
         int: shell return code
 
     """
-    neo4j_dir = 'neo4j-community-3.5.2'
-    full_cmd = f'{neo4j_dir}/bin/neo4j {cmd}'
+    neo4j_path = os.path.join(
+        os.path.dirname(__file__),
+        '..',
+        'neo4j-community-3.5.2',
+        'bin/neo4j'
+        )
+    full_cmd = f'{neo4j_path} {cmd}'
     parsed_cmd = shlex.split(full_cmd)
     return subprocess.call(parsed_cmd)
 
@@ -52,11 +60,11 @@ def unix_to_timestamp(unix_seconds):
 
 
 def wait_for_connection(graph):
-    logging.info('Waiting for database connection...')
+    logger.info('Waiting for database connection...')
     while True:
         try:
             graph.begin()
-            logging.info('Database connected.')
+            logger.info('Database connected.')
             return
         except neobolt.exceptions.ServiceUnavailable:
             time.sleep(0.1)
@@ -76,7 +84,7 @@ def setup_db_schema(graph):
 
     meta_node = Node('Meta', last_update_from_history=0)
     graph.create(meta_node)
-    logging.info('Database schema created.')
+    logger.info('Database schema created.')
 
 
 graph_legend = """

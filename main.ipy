@@ -1,0 +1,42 @@
+#!/bin/sh
+"exec" "`dirname $0`/venv/bin/ipython3" "-i" "$0" "$@"
+# shebang for virtualenv execution from any location
+# credit: stackoverflow.com/questions/20095351
+
+import logging
+import textwrap
+
+from pyfiglet import figlet_format
+
+from bubbles.video_database import GraphUpdater
+
+logging.getLogger('bubbles').setLevel(logging.DEBUG)
+logging.getLogger('neobolt').setLevel(logging.INFO)
+logging.getLogger('parso').setLevel(logging.INFO)
+logging.basicConfig(level=logging.NOTSET)
+
+
+class Quit:
+    def __repr__(self):
+        eval('quit')()
+        return ''
+
+
+class Macro:
+    def __init__(self, cmd):
+        self.cmd = textwrap.dedent(cmd)
+
+    def __repr__(self):
+        exec(self.cmd)
+        return ''
+
+    def __str__(self):
+        return self.cmd
+
+
+q = Quit()
+u = Macro('gu.update_with_browser_history()')
+
+print(figlet_format('Bubbles', font='graffiti'))
+
+gu = GraphUpdater()
