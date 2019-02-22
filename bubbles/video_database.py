@@ -1,17 +1,15 @@
-import shlex
-import subprocess
 import time
 import logging
+import time
+from multiprocessing.pool import ThreadPool
 
 from py2neo import Graph, Node, Relationship
-from src.youtube_proxy import fetch_recomms
-from multiprocessing.pool import ThreadPool
-from src.history_parser import get_video_records
-from src.common import ensure_neo4j_running, unix_to_timestamp, wait_for_connection, setup_db_schema
 
+from bubbles.common import ensure_neo4j_running, unix_to_timestamp, wait_for_connection, setup_db_schema
+from bubbles.history_parser import get_video_records
+from bubbles.youtube_proxy import fetch_recomms
 
 logging.getLogger().setLevel(logging.DEBUG)  # just for testing
-logging.getLogger('neobolt').setLevel(logging.INFO)
 
 
 Recommends = Relationship.type('RECOMMENDS')
@@ -68,6 +66,8 @@ class GraphUpdater:
                 recommended_node = self._update_record(tx, video_info)
                 rel = Recommends(node, recommended_node)
                 tx.create(rel)
+            node['recomms_update'] = time.time()
+            tx.push(node)
 
     def _update_record(self, tx, info):
         node = self._get_node('Video',

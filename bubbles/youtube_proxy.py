@@ -23,5 +23,5 @@ def fetch_recomms(video_id):
         url_match = re.search('/watch\?v=(.{11})', line)
         title_match = re.search('title="(.*)">', line)
         video_id = url_match.group(1)
-        title = title_match.group(1)
+        title = title_match.group(1) if title_match else None
         yield video_id, title
