@@ -4,13 +4,17 @@ import time
 import logging
 
 from py2neo import Graph, Node, Relationship
-from src.youtube_proxy import fetch_recommendations
+from src.youtube_proxy import fetch_recomms
 from multiprocessing.pool import ThreadPool
 from src.history_parser import get_video_records
-from src.common import ensure_neo4j_running, unix_to_timestamp
+from src.common import ensure_neo4j_running, unix_to_timestamp, wait_for_connection, setup_db_schema
 
 
-# logging.getLogger().setLevel(logging.DEBUG) # just for testing
+logging.getLogger().setLevel(logging.DEBUG)  # just for testing
+logging.getLogger('neobolt').setLevel(logging.INFO)
+
+
+Recommends = Relationship.type('RECOMMENDS')
 
 
 class GraphUpdater:
@@ -23,12 +27,12 @@ class GraphUpdater:
         """
         ensure_neo4j_running()
         self.graph = Graph(password='myyyk')
+        wait_for_connection(self.graph)
         self.workers = ThreadPool(processes=50)
         if not self._get_node('Meta'):
-            meta_node = Node('Meta', last_update_from_history=0)
-            self.graph.create(meta_node)
+            setup_db_schema(self.graph)
 
-    def update_with_browser_history(self, all_records=False):
+    def update_with_browser_history(self, only_new_records=True):
         """
 
         Note:
@@ -36,47 +40,67 @@ class GraphUpdater:
             out of sync with firefox timestamps.
 
         """
+        meta = self._get_node('Meta')
+        last_update = meta['last_update_from_history'] \
+            if only_new_records else 0
+
+        timestamp = unix_to_timestamp(last_update)
+        logging.info(f'Updating with records younger than {timestamp}...')
+
+        for video_info in get_video_records(last_update):
+            # todo maybe first put them all to some buffer and then insert
+            video_info['watch_dist'] = 0
+            tx = self.graph.begin(autocommit=True)
+            self._update_record(tx, video_info)
+
+        meta['last_update_from_history'] = time.time()
+        self.graph.push(meta)
+
+    def update_recomms(self, node):
+        watch_dist = node['watch_dist']
         with self.graph.begin() as tx:
-            meta = self._get_node('Meta')
-            last_update = meta['last_update_from_history'] \
-                if not all_records else 0
+            for video_id, title in fetch_recomms(node['video_id']):
+                video_info = {
+                    'video_id': video_id,
+                    'title': title,
+                    'watch_dist': watch_dist + 1
+                }
+                recommended_node = self._update_record(tx, video_info)
+                rel = Recommends(node, recommended_node)
+                tx.create(rel)
 
-            timestamp = unix_to_timestamp(last_update)
-            logging.info(f'Updating with records younger than {timestamp}...')
-
-            for record in get_video_records(last_update):
-                self._insert_record(tx, record)
-
-            meta['last_update_from_history'] = time.time()
-            tx.push(meta)
-
-    def _insert_record(self, tx, record):
-        node = self._get_node('Video', video_id=record['video_id'])
+    def _update_record(self, tx, info):
+        node = self._get_node('Video',
+                              video_id=info['video_id'])
         if node is None:
-            new_node = Node('Video', **record, dist_from_watched=0)
+            # create new node
+            new_node = Node('Video', **info, recomms_update=0)
             tx.create(new_node)
             logging.debug(f'Created new node {new_node}')
+            return new_node
         else:
-            # such video already exists so only update
-            node.update(record)
+            # update node
+            # distance from watched can only go down
+            # todo update visit_count
+            info['watch_dist'] = min(info['watch_dist'],
+                                     node['watch_dist'])
+            node.update(info)
             tx.push(node)
             logging.debug(f'Updated node {node}')
+            return node
 
     def _get_node(self, node_type, **kwargs):
-        return self.graph.nodes.match(node_type, **kwargs).first()
+        """Returns one node from database that matches given info.
 
-    # def save_recommendations(self, video_record):
-    #     tx = self.graph.begin()
-    #     watched_video = Node('Video',
-    #                          **video_record,
-    #                          watched=True)
-    #     tx.create(watched_video)
-    #     recommendations = fetch_recommendations(watched_video.)
-    #     for id, title in []:
-    #         pass
-    #
-    #
-    #     tx.commit()
+        If nothing matched, returns None.
 
+        Args:
+            node_type (str): { Video | Meta }
+            **kwargs: node fields that will be matched
 
+        Returns:
+            Node | None: -
 
+        """
+        match = self.graph.nodes.match(node_type, **kwargs)
+        return match.first()

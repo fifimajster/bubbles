@@ -8,5 +8,6 @@ wget "https://neo4j.com/artifact.php?name="${tar_filename} -O ${tar_filename}
 tar -xf ${tar_filename}
 rm ${tar_filename}
 
+echo "Setup database"
 default_password="myyyk"
 ${neo4j_dir}/bin/neo4j-admin set-initial-password ${default_password}

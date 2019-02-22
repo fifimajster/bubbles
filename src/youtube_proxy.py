@@ -4,15 +4,14 @@ import requests
 from bs4 import BeautifulSoup
 
 
-def fetch_recommendations(video_id):
+def fetch_recomms(video_id):
     """Fetch youtube recommendations of a given video.
+
+    Yields (video_id, title).
 
     Args:
         video_id (str): part of the url of the video that comes after
                         'https://youtube.com/watch?v='
-
-    Yields:
-        tuple: id of the recommended video, it's title
 
     """
     url = 'https://youtube.com/watch?v=' + video_id

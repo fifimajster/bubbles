@@ -26,13 +26,12 @@ def _get_db_cursor():
 def _get_history(time_limit=0):
     """Get latest records from firefox history.
 
+    Yields a tuple: URL, visit_count, last_visited (in UNIX seconds)
+
     Args:
         time_limit (float): only get records later than this
                             (it's in UNIX seconds)
                             if not specified, gets all history
-
-    Yields:
-        tuple: URL, visit_count, last_visited (in UNIX seconds)
 
     """
     # database schema:
@@ -60,9 +59,6 @@ def get_video_records(time_limit=0):
         time_limit (float): only get records later than this
                             (it's in UNIX seconds)
                             if not specified, gets all history
-
-    Yields:
-        dict: video info
 
     """
     history = _get_history(time_limit)
