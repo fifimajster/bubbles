@@ -12,12 +12,12 @@ import os
 import re
 import sqlite3
 import subprocess
-import sys
 import textwrap
 from shutil import copyfile
 
 
 PROC_NAME = 'firefox -P bubbles youtube.com'
+SAVED_IDS_PATH = os.path.join(os.getenv('HOME'), '.bubbles')
 
 
 def _get_db_cursor(db_name, profile='bubbles', use_copy=True):
@@ -70,7 +70,8 @@ def get_youtube_id(origin_attributes='', profile='bubbles'):
 
 class FirefoxInstance:
     def __init__(self):
-        with open(self._saved_ids_path(), 'r') as json_file:
+
+        with open(SAVED_IDS_PATH, 'r') as json_file:
             self.youtube_ids = json.load(json_file)
 
         for i, youtube_id in enumerate(self.youtube_ids):
@@ -100,17 +101,38 @@ class FirefoxInstance:
     def _correct_id(raw_id):
         return re.match(r'[0-9A-Za-z-_]{11}', raw_id)
 
-    @staticmethod
-    def _saved_ids_path():
-        script_directory = os.path.dirname(sys.argv[2])
-        return  os.path.join(script_directory, 'youtube_ids.json')
-
     def save(self):
-        description = input('Description:\n')
-        self.youtube_ids.append((get_youtube_id(), description))
+        raw_id = get_youtube_id()
+        if raw_id in (id_[0] for id_ in self.youtube_ids):
+            ans = input('This id already exists. Do you want to update description? [Y/n]')
+            if ans not in ['y', 'Y', '']:
+                return
+            for elem in self.youtube_ids:
+                if elem[0] == raw_id:
+                    self.youtube_ids.remove(elem)
 
-        with open(self._saved_ids_path(), 'w') as json_file:
+        description = input('Description:\n')
+        self.youtube_ids.append((raw_id, description))
+
+        with open(SAVED_IDS_PATH, 'w') as json_file:
             json.dump(self.youtube_ids, json_file)
 
     def close(self):
         self.process.kill()
+
+
+if __name__ == '__main__':
+    if not os.path.exists(SAVED_IDS_PATH):
+        with open(SAVED_IDS_PATH, 'w') as new_file:
+            new_file.write('[]')
+
+    print('')
+    try:
+        from pyfiglet import figlet_format
+        print(figlet_format('Bubbles', font='graffiti'))
+        print('')
+    except ModuleNotFoundError:
+        pass
+    f = FirefoxInstance()
+    s = f.save
+    print("To save this identity, type 's()'.")
