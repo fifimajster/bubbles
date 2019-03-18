@@ -15,6 +15,7 @@ import subprocess
 import textwrap
 from shutil import copyfile
 
+from IPython import get_ipython
 
 PROC_NAME = 'firefox -P bubbles youtube.com'
 SAVED_IDS_PATH = os.path.join(os.getenv('HOME'), '.bubbles')
@@ -81,20 +82,22 @@ class FirefoxInstance:
         choice = input(textwrap.dedent("""
         type number to choose listed identity
         type 'n' to create a new one
-        type id to import existing identity
-        \n"""))
+        type id to import existing one (it's a 11 character text)
+        press ENTER to keep last used identity
+        """))
 
         if choice.isdigit():
-            raw_id = self.youtube_ids[int(choice)][0]
+            chosen_id = self.youtube_ids[int(choice)][0]
+            set_youtube_id(chosen_id)
         elif choice == 'n':
-            raw_id = ''
+            set_youtube_id('')
         elif self._correct_id(choice):
-            raw_id = choice
+            set_youtube_id(choice)
+        elif choice == '':
+            pass
         else:
             print('incorrect id')
             return
-
-        set_youtube_id(raw_id)
 
         self.process = subprocess.Popen(PROC_NAME.split())
 
@@ -137,11 +140,11 @@ if __name__ == '__main__':
     try:
         from pyfiglet import figlet_format
         print(figlet_format('Bubbles', font='graffiti'))
-        print('')
     except ModuleNotFoundError:
         pass
+
     f = FirefoxInstance()
-    s = f.save
-    l = f.list_ids
-    print("To save this identity, type 's()'.")
-    print("To list all ids, type 'l()'.")
+    get_ipython().define_macro('s', 'f.save()')
+    get_ipython().define_macro('l', 'f.list_ids()')
+    print("To save this identity, type 's'.")
+    print("To list all saved ids, type 'l'.")
