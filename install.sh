@@ -1,6 +1,28 @@
 #!/bin/bash -e
 
-sudo apt install ipython3
+# check os
+uname_out=$(uname -s)
+case ${uname_out} in
+    Linux)      installer='sudo apt install' ;;
+    Darwin)     installer='brew install' ;;
+    *)          echo 'Your system is not supported, choose installer manually.'
+                exit 1
+esac
+
+${installer} firefox
+${installer} ipython3
+
+cd ~/.mozilla/firefox/
+cp -r *.default bubbles
+
+while true; do
+    read -p "Create dash shortcut? (tested on Ubuntu 18) [y/n]" yn
+    case $yn in
+        [Yy]* ) break;;
+        [Nn]* ) echo "Installed successfully"; exit;;
+        * ) echo "Please answer y or n.";;
+    esac
+done
 
 chmod u+x bubbles.py bubbles.desktop
 PATH=$(pwd)
