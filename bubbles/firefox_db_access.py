@@ -70,6 +70,7 @@ def get_youtube_id(origin_attributes='', profile='bubbles'):
 
 class FirefoxInstance:
     def __init__(self):
+        # youtube_ids is a list of pairs (id, description)
 
         with open(SAVED_IDS_PATH, 'r') as json_file:
             self.youtube_ids = json.load(json_file)
@@ -115,10 +116,16 @@ class FirefoxInstance:
         self.youtube_ids.append((raw_id, description))
 
         with open(SAVED_IDS_PATH, 'w') as json_file:
-            json.dump(self.youtube_ids, json_file)
+            json.dump(self.youtube_ids, json_file, indent=4)
 
     def close(self):
         self.process.kill()
+
+    def list_ids(self):
+        print(f'{"id":<13} description')
+        print('-' * 30)
+        for raw_id, description in self.youtube_ids:
+            print(f'{raw_id:<13} {description}')
 
 
 if __name__ == '__main__':
@@ -135,4 +142,6 @@ if __name__ == '__main__':
         pass
     f = FirefoxInstance()
     s = f.save
+    l = f.list_ids
     print("To save this identity, type 's()'.")
+    print("To list all ids, type 'l()'.")
