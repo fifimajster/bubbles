@@ -1,2 +1,2 @@
 # bubbles
-Customizable and private video recommendations.
+Control your youtube recommendations.
