@@ -31,14 +31,16 @@ def _get_filename_safely(relative_wildcard):
 
 def _get_db_cursor(db_name, profile, use_copy=True):
     """Return cursor to database.
-
-    Args:
-        db_name: {places|cookies} name of the database
-        profile: name of your firefox profile
-        use_copy: should use a copy instead of the original database
-
+    
+    Arguments:
+        db_name {[type]} -- {places|cookies} name of the database
+        profile {[type]} -- name of your firefox profile
+    
+    Keyword Arguments:
+        use_copy {bool} -- should use a copy instead of the original database (default: {True})
+    
     Returns:
-        Cursor for the copied database.
+        sqlite3.Cursor -- Cursor for the copied database.
 
     """
     filename = _get_filename_safely(f'.mozilla/firefox/{profile}/{db_name}.sqlite')
