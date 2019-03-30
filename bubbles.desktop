@@ -1,7 +1,0 @@
-[Desktop Entry]
-Comment=Control your youtube recommendations.
-Name=Bubbles
-Exec={SCRIPT_PATH}
-Terminal=true
-Type=Application
-Icon=snake_eye.png
