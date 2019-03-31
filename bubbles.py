@@ -11,13 +11,13 @@ from shutil import copyfile
 
 def _get_filename_safely(relative_wildcard):
     """Get absolute filename if it exists.
-    
+
     Arguments:
         relative_wildcard {str} -- wildcard that will be matched, relative to home directory
-    
+
     Raises:
         IOError -- if no file was found
-    
+
     Returns:
         str -- absolute filename
     """
@@ -32,19 +32,20 @@ def _get_filename_safely(relative_wildcard):
 
 def _get_db_cursor(db_name, profile, use_copy=True):
     """Return cursor to database.
-    
+
     Arguments:
         db_name {str} -- {places|cookies} name of the database
         profile {str} -- name of your firefox profile
-    
+
     Keyword Arguments:
         use_copy {bool} -- should use a copy instead of the original database (default: {True})
-    
+
     Returns:
         sqlite3.Cursor -- Cursor for the copied database.
     """
 
-    filename = _get_filename_safely(f'.mozilla/firefox/{profile}/{db_name}.sqlite')
+    filename = _get_filename_safely(
+        f'.mozilla/firefox/{profile}/{db_name}.sqlite')
 
     if use_copy:
         copy_filename = filename + '_copy'
@@ -57,18 +58,19 @@ def _get_db_cursor(db_name, profile, use_copy=True):
 
 def get_container_identities(profile):
     """Get data about firefox containers.
-    
+
     Arguments:
         profile {str} -- firefox profile from which to get profiles
     """
 
-    filename = _get_filename_safely(f'.mozilla/firefox/{profile}/containers.json')
+    filename = _get_filename_safely(
+        f'.mozilla/firefox/{profile}/containers.json')
     with open(filename) as file:
         container_data = json.load(file)
     for identity in container_data['identities']:
         if identity['public']:
             yield identity
-        
+
 
 def set_youtube_id(profile, origin_attributes, youtube_id):
     cursor = _get_db_cursor('cookies', profile, use_copy=False)
@@ -118,9 +120,10 @@ def main(profile):
         if raw_id is not None:
             print(f'{raw_id:<13} {name}')
     print('')
-    
+
     # get container name
-    name = input("Type container name, for which you'd like to set youtube id.\n")
+    name = input(
+        "Type container name, for which you'd like to set youtube id.\n")
     userContextId = None
     for identity in get_container_identities(profile):
         if identity['name'] == name:
@@ -131,15 +134,16 @@ def main(profile):
         return
 
     # get youtube id
-    youtube_id = input("Type youtube id you'd like to set. (it's a 11 character text)\n")
+    youtube_id = input(
+        "Type youtube id you'd like to set. (it's a 11 character text)\n")
     if not _correct_id(youtube_id):
         print('Incorrect id.\n')
-        return 
-    
+        return
+
     # set youtube id to chosen container
     set_youtube_id(profile, f'^userContextId={userContextId}', youtube_id)
     print('Id set successfully.')
-    
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -153,4 +157,3 @@ if __name__ == '__main__':
         print(err)
     except sqlite3.OperationalError:
         print("Couldn't set id, you must close firefox.")
-
