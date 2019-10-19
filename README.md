@@ -11,4 +11,4 @@ Just run:
 ./bubbles.py
 ```
 
-one\two
+one\ two
