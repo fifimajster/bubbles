@@ -10,10 +10,3 @@ Just run:
 ```bash
 ./bubbles.py
 ```
-
-test\
-test
-
-test
-\
-test
